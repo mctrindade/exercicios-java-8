@@ -92,11 +92,14 @@ public class App {
 
         HashMap<String, List<Product>> map = new HashMap<>();
 
+        payments.stream().collect(Collectors.groupingBy(Payment::getCustomer));
+
         payments.forEach(p -> {
             map.put(p.getCustomer().getName(), p.getProducts());
         });
 
         // 7 - Qual cliente gastou mais?
+
 
         String keyWithHighestSum = null;
         double highestSum = 0.0;
@@ -128,13 +131,13 @@ public class App {
 
         // 9 - Crie 3 assinaturas com assinaturas de 99.98 reais, sendo 2 deles com assinaturas encerradas.
 
-        Signature s1 = new Signature(new BigDecimal("99.98"), LocalDateTime.now().minusMonths(10), null, c1);
-        Signature s2 = new Signature(new BigDecimal("99.98"), LocalDateTime.now().minusMonths(6), LocalDateTime.now().minusMonths(1), c2);
-        Signature s3 = new Signature(new BigDecimal("99.98"),  LocalDateTime.now().minusMonths(2), LocalDateTime.now().minusMonths(1), c3);
+        Signature s1 = new Signature(new BigDecimal("99.98"), LocalDate.now().minusMonths(10), c1);
+        Signature s2 = new Signature(new BigDecimal("99.98"), LocalDate.now().minusMonths(6), Optional.of(LocalDate.now().minusMonths(1)), c2);
+        Signature s3 = new Signature(new BigDecimal("99.98"),  LocalDate.now().minusMonths(2), Optional.of(LocalDate.now().minusMonths(1)), c3);
 
         //10 - Imprima o tempo em meses de alguma assinatura ainda ativa.
 
-        Period periodo = Period.between(s1.getBegin().toLocalDate(), LocalDateTime.now().toLocalDate());
+        Period periodo = Period.between(s1.getBegin(), LocalDateTime.now().toLocalDate());
 
         System.out.println("Tempo em meses de assinatura ativa da assinatura s1: " + periodo.getMonths());
 
@@ -142,24 +145,27 @@ public class App {
 
         //11 - Imprima o tempo de meses entre o start e end de todas assinaturas. Não utilize IFs para assinaturas sem end Time.
 
-        Period periodo2 = Period.between(s2.getBegin().toLocalDate(), s2.getEnd().toLocalDate());
-        System.out.println("Tempo em meses de assinatura entre start e end da assinatura s2: " + periodo2.getMonths());
-        Period periodo3 = Period.between(s3.getBegin().toLocalDate(), s3.getEnd().toLocalDate());
-        System.out.println("Tempo em meses de assinatura entre start e end da da assinatura s3: " + periodo3.getMonths());
+        List<Signature> signaturesEnabled = Arrays.asList(s1,s2,s3);
+
+        signaturesEnabled.stream().filter(s -> s.getEnd().isPresent()).forEach(s -> {
+            Period periodo2 = Period.between(s.getBegin(), s.getEnd().get());
+            System.out.println("Tempo em meses de assinatura entre start e end da assinatura do  " + s.getCustomer().getName() + " : " + periodo2.getMonths());
+        });
+
 
         System.out.println("--------------------------------------------------------------------------------");
 
         //12 - Calcule o valor pago em cada assinatura até o momento.
         List<Signature> signatures =  Arrays.asList(s1, s2, s3 );
 
-        signatures.stream().filter(k-> k.getEnd() != null).collect(Collectors.toList()).stream().forEach(s -> {
-            Period period =  Period.between(s.getBegin().toLocalDate(), s.getEnd().toLocalDate());
+        signatures.stream().filter(k-> k.getEnd().isPresent()).collect(Collectors.toList()).stream().forEach(s -> {
+            Period period =  Period.between(s.getBegin(), s.getEnd().get());
             BigDecimal valuePaid = s.getMonthlyPayment().multiply(BigDecimal.valueOf(period.getMonths()));
             System.out.println("Valor pago de assinatura do cliente " + s.getCustomer().getName() + " : "+valuePaid);
         });
 
-        signatures.stream().filter(k-> k.getEnd() == null).collect(Collectors.toList()).stream().forEach(s -> {
-            Period period =  Period.between(s.getBegin().toLocalDate(), LocalDate.now());
+        signatures.stream().filter(k-> !k.getEnd().isPresent()).collect(Collectors.toList()).stream().forEach(s -> {
+            Period period =  Period.between(s.getBegin(), LocalDate.now());
             BigDecimal valuePaid = s.getMonthlyPayment().multiply(BigDecimal.valueOf(period.getMonths()));
             System.out.println("Valor pago de assinatura do cliente " + s.getCustomer().getName() + " : "+valuePaid);
         });

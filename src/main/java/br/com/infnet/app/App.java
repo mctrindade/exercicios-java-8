@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.Period;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class App {
@@ -90,32 +91,19 @@ public class App {
 
         // 6 Crie um Mapa de <Cliente, List<Produto> , onde Cliente pode ser o nome do cliente.
 
-        HashMap<String, List<Product>> map = new HashMap<>();
+        Map<Customer, List<List<Product>>> customerToProducts = payments.stream().collect(Collectors.groupingBy(Payment::getCustomer, Collectors.mapping(Payment::getProducts, Collectors.toList())));
 
-        payments.stream().collect(Collectors.groupingBy(Payment::getCustomer));
+        Map<Customer, List<Product>> costumerProductsMap = customerToProducts.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().stream().flatMap(List::stream).collect(Collectors.toList())));
 
-        payments.forEach(p -> {
-            map.put(p.getCustomer().getName(), p.getProducts());
-        });
 
         // 7 - Qual cliente gastou mais?
 
+        Function<Payment, BigDecimal> reducingFunction = p -> p.getProducts().stream().map(Product::getPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
+        Map<Customer, BigDecimal> customerMoneySpentMap = payments.stream().collect(Collectors.groupingBy(Payment::getCustomer, Collectors.reducing(BigDecimal.ZERO, reducingFunction, BigDecimal::add)));
 
-        String keyWithHighestSum = null;
-        double highestSum = 0.0;
+        List<Map.Entry<Customer, BigDecimal>> listSells = customerMoneySpentMap.entrySet().stream().sorted(Collections.reverseOrder(Map.Entry.comparingByValue())).collect(Collectors.toList());
 
-        for (Map.Entry<String, List<Product>> entry : map.entrySet()) {
-            double sum = 0.0;
-            for (Product product : entry.getValue()) {
-                sum += product.getPrice().doubleValue();
-            }
-            if (sum > highestSum) {
-                highestSum = sum;
-                keyWithHighestSum = entry.getKey();
-            }
-        }
-
-        System.out.println("Cliente que gastou mais " + keyWithHighestSum);
+        System.out.println("Cliente que gastou mais " + listSells.get(0).getKey().getName());
 
         System.out.println("--------------------------------------------------------------------------------");
 
@@ -132,8 +120,8 @@ public class App {
         // 9 - Crie 3 assinaturas com assinaturas de 99.98 reais, sendo 2 deles com assinaturas encerradas.
 
         Signature s1 = new Signature(new BigDecimal("99.98"), LocalDate.now().minusMonths(10), c1);
-        Signature s2 = new Signature(new BigDecimal("99.98"), LocalDate.now().minusMonths(6), Optional.of(LocalDate.now().minusMonths(1)), c2);
-        Signature s3 = new Signature(new BigDecimal("99.98"),  LocalDate.now().minusMonths(2), Optional.of(LocalDate.now().minusMonths(1)), c3);
+        Signature s2 = new Signature(new BigDecimal("99.98"), LocalDate.now().minusMonths(6),LocalDate.now().minusMonths(1), c2);
+        Signature s3 = new Signature(new BigDecimal("99.98"),  LocalDate.now().minusMonths(2), LocalDate.now().minusMonths(1), c3);
 
         //10 - Imprima o tempo em meses de alguma assinatura ainda ativa.
 
@@ -147,8 +135,10 @@ public class App {
 
         List<Signature> signaturesEnabled = Arrays.asList(s1,s2,s3);
 
-        signaturesEnabled.stream().filter(s -> s.getEnd().isPresent()).forEach(s -> {
-            Period periodo2 = Period.between(s.getBegin(), s.getEnd().get());
+        LocalDate hoje = LocalDate.now();
+
+        signaturesEnabled.stream().forEach(s -> {
+            Period periodo2 = Period.between(s.getBegin(), s.getEnd().orElse(hoje));
             System.out.println("Tempo em meses de assinatura entre start e end da assinatura do  " + s.getCustomer().getName() + " : " + periodo2.getMonths());
         });
 
@@ -158,16 +148,12 @@ public class App {
         //12 - Calcule o valor pago em cada assinatura até o momento.
         List<Signature> signatures =  Arrays.asList(s1, s2, s3 );
 
-        signatures.stream().filter(k-> k.getEnd().isPresent()).collect(Collectors.toList()).stream().forEach(s -> {
-            Period period =  Period.between(s.getBegin(), s.getEnd().get());
+        signatures.stream().forEach(s -> {
+            Period period =  Period.between(s.getBegin(), s.getEnd().orElse(hoje));
             BigDecimal valuePaid = s.getMonthlyPayment().multiply(BigDecimal.valueOf(period.getMonths()));
             System.out.println("Valor pago de assinatura do cliente " + s.getCustomer().getName() + " : "+valuePaid);
         });
 
-        signatures.stream().filter(k-> !k.getEnd().isPresent()).collect(Collectors.toList()).stream().forEach(s -> {
-            Period period =  Period.between(s.getBegin(), LocalDate.now());
-            BigDecimal valuePaid = s.getMonthlyPayment().multiply(BigDecimal.valueOf(period.getMonths()));
-            System.out.println("Valor pago de assinatura do cliente " + s.getCustomer().getName() + " : "+valuePaid);
-        });
+
     }
 }

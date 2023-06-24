@@ -12,10 +12,10 @@ public class Signature {
     private Optional<LocalDate> end;
     private Customer customer;
 
-    public Signature(BigDecimal monthlyPayment, LocalDate begin, Optional<LocalDate> end, Customer customer) {
+    public Signature(BigDecimal monthlyPayment, LocalDate begin,  LocalDate end, Customer customer) {
         this.monthlyPayment = monthlyPayment;
         this.begin = begin;
-        this.end = end;
+        this.end = Optional.of(end);
         this.customer = customer;
     }
 
@@ -23,6 +23,7 @@ public class Signature {
         this.monthlyPayment = monthlyPayment;
         this.begin = begin;
         this.customer = customer;
+        this.end = Optional.empty();
     }
 
     public Signature() {

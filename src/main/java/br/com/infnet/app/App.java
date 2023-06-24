@@ -1,22 +1,19 @@
 package br.com.infnet.app;
 
-import br.com.infnet.domain.Customer;
-import br.com.infnet.domain.Payment;
-import br.com.infnet.domain.Product;
-import br.com.infnet.domain.Signature;
+import br.com.infnet.domain.*;
+import br.com.infnet.exception.CustomerWithSignaturePaymentLateException;
+import br.com.infnet.service.PaymentService;
+import br.com.infnet.service.SignatureService;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.Month;
-import java.time.Period;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+
 
 public class App {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws CustomerWithSignaturePaymentLateException {
 
         //1 Crie uma Classe com um método main para criar alguns produtos, clientes e pagamentos.
         //  Crie Pagamentos com:  a data de hoje, ontem e um do mês passado.
@@ -43,77 +40,49 @@ public class App {
         productList3.add(p5);
         productList3.add(p6);
 
-        Payment payment1 = new Payment(productList1, LocalDate.now(), c1);
-        Payment payment2 = new Payment(productList2, LocalDate.now().minusDays(1), c2);
-        Payment payment3 = new Payment(productList3, LocalDate.now().minusMonths(1), c3);
+        Payment payment1 = new Payment(productList1, LocalDate.now(), c1, new ArrayList<>());
+        Payment payment2 = new Payment(productList2, LocalDate.now().minusDays(1), c2,  new ArrayList<>());
+        Payment payment3 = new Payment(productList3, LocalDate.now().minusMonths(1), c3,  Arrays.asList(new CustomerWithSignaturePaymentLateValidation()));
 
         //2 - Ordene e imprima os pagamentos pela data de compra.
 
         List<Payment> payments = Arrays.asList(payment1, payment2, payment3);
-        payments.sort(Comparator.comparing(p -> p.getBuyDate()));
-        System.out.println(payments);
+
+        PaymentService.printOrderedPayments(payments);
 
         System.out.println("--------------------------------------------------------------------------------");
         //3 - Calcule e Imprima a soma dos valores de um pagamento com optional e recebendo um Double diretamente.
 
-        List<List<Product>> paymentProducts = payments.stream().map(Payment::getProducts).collect(Collectors.toList());
-        paymentProducts.stream().forEach(p -> {
-            OptionalDouble sumOpt = OptionalDouble.of(p.stream().mapToDouble(pro -> pro.getPrice().doubleValue()).reduce(0.0, (a, b) -> a + b));
-            if (sumOpt.isPresent())
-                System.out.println("SOMA DOS PRODUTOS: " + sumOpt.getAsDouble());
-        });
+        PaymentService.printsSumPayments(payments);
 
         System.out.println("--------------------------------------------------------------------------------");
 
         // 4- Calcule o Valor de todos os pagamentos da Lista de pagamentos.
 
-        List<Double> sumPaymentValues = new ArrayList<>();
-        paymentProducts.stream().forEach(p -> {
-            sumPaymentValues.add(p.stream().mapToDouble(pro -> pro.getPrice().doubleValue()).reduce(0.0, (a, b) -> a + b));
-        });
-
-        System.out.println("SOMA TOTAL PRODUTOS: " + sumPaymentValues.stream().reduce(0.0, (a, b) -> a + b));
+       PaymentService.printSumOfAllPayments(payments);
 
         System.out.println("--------------------------------------------------------------------------------");
 
         // 5- Imprima a quantidade de cada Produto vendido.
 
         List<Product> allProducts = Arrays.asList(p1, p2, p3, p4, p5, p6);
-        List<Product> allProductSold = new ArrayList<>();
-        paymentProducts.stream().forEach(allProductSold::addAll);
 
-        allProducts.stream().forEach(p -> {
-            System.out.println("Quantidade vendida do produto " + p.getName() + " : " + allProductSold.stream().filter(ps -> ps.equals(p)).count());
-
-        });
+        PaymentService.printTheAmountOfEachProductSelled(payments, allProducts);
 
         System.out.println("--------------------------------------------------------------------------------");
 
         // 6 Crie um Mapa de <Cliente, List<Produto> , onde Cliente pode ser o nome do cliente.
 
-        Map<Customer, List<List<Product>>> customerToProducts = payments.stream().collect(Collectors.groupingBy(Payment::getCustomer, Collectors.mapping(Payment::getProducts, Collectors.toList())));
-
-        Map<Customer, List<Product>> costumerProductsMap = customerToProducts.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().stream().flatMap(List::stream).collect(Collectors.toList())));
-
+        Map<Customer, List<Product>> costumerProductsMap = PaymentService.createMapCustomerProducts(payments);
 
         // 7 - Qual cliente gastou mais?
 
-        Function<Payment, BigDecimal> reducingFunction = p -> p.getProducts().stream().map(Product::getPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
-        Map<Customer, BigDecimal> customerMoneySpentMap = payments.stream().collect(Collectors.groupingBy(Payment::getCustomer, Collectors.reducing(BigDecimal.ZERO, reducingFunction, BigDecimal::add)));
-
-        List<Map.Entry<Customer, BigDecimal>> listSells = customerMoneySpentMap.entrySet().stream().sorted(Collections.reverseOrder(Map.Entry.comparingByValue())).collect(Collectors.toList());
-
-        System.out.println("Cliente que gastou mais " + listSells.get(0).getKey().getName());
-
+        System.out.println("Cliente que gastou mais " + PaymentService.getTheConsumerWhoSpentMoreMoney(payments).getName());
         System.out.println("--------------------------------------------------------------------------------");
 
         //8 - Quanto foi faturado em um determinado mês?
 
-        List<Payment> junePayments = payments.stream().filter(k -> k.getBuyDate().getMonth().equals(Month.JUNE)).collect(Collectors.toList());
-        List<Product> allProductSoldInJune = new ArrayList<>();
-        junePayments.stream().map( pay -> pay.getProducts()).forEach(allProductSoldInJune::addAll);
-        BigDecimal sum = allProductSoldInJune.stream().map(p -> p.getPrice()).reduce(BigDecimal.ZERO, BigDecimal::add);
-        System.out.println("Valor faturado em Junho: " + sum.toString());
+        System.out.println("Valor faturado em Junho: " + PaymentService.HowMuchWasSelledByMonth(payments, Month.JUNE));
 
         System.out.println("--------------------------------------------------------------------------------");
 
@@ -125,35 +94,19 @@ public class App {
 
         //10 - Imprima o tempo em meses de alguma assinatura ainda ativa.
 
-        Period periodo = Period.between(s1.getBegin(), LocalDateTime.now().toLocalDate());
-
-        System.out.println("Tempo em meses de assinatura ativa da assinatura s1: " + periodo.getMonths());
+        System.out.println("Tempo em meses de assinatura ativa da assinatura s1: " +  SignatureService.timeInMonthsSignatureActive(s1));
 
         System.out.println("--------------------------------------------------------------------------------");
 
         //11 - Imprima o tempo de meses entre o start e end de todas assinaturas. Não utilize IFs para assinaturas sem end Time.
 
-        List<Signature> signaturesEnabled = Arrays.asList(s1,s2,s3);
-
-        LocalDate hoje = LocalDate.now();
-
-        signaturesEnabled.stream().forEach(s -> {
-            Period periodo2 = Period.between(s.getBegin(), s.getEnd().orElse(hoje));
-            System.out.println("Tempo em meses de assinatura entre start e end da assinatura do  " + s.getCustomer().getName() + " : " + periodo2.getMonths());
-        });
-
+        List<Signature> signatures = Arrays.asList(s1,s2,s3);
+        SignatureService.printTheTimeInMonthsAllSignatures(signatures);
 
         System.out.println("--------------------------------------------------------------------------------");
 
         //12 - Calcule o valor pago em cada assinatura até o momento.
-        List<Signature> signatures =  Arrays.asList(s1, s2, s3 );
-
-        signatures.stream().forEach(s -> {
-            Period period =  Period.between(s.getBegin(), s.getEnd().orElse(hoje));
-            BigDecimal valuePaid = s.getMonthlyPayment().multiply(BigDecimal.valueOf(period.getMonths()));
-            System.out.println("Valor pago de assinatura do cliente " + s.getCustomer().getName() + " : "+valuePaid);
-        });
-
+        SignatureService.printTheValuePaidInEachSignature(signatures);
 
     }
 }

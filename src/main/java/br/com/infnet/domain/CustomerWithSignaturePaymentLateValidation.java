@@ -6,7 +6,7 @@ public class CustomerWithSignaturePaymentLateValidation implements ValidationPay
 
     @Override
     public void validate(Customer customer) throws CustomerWithSignaturePaymentLateException {
-        if(customer.hasMonthlySignaturePaymentLate()){
+        if(customer.isSignaturePaymentLate()){
             throw new CustomerWithSignaturePaymentLateException("Customer with signature payment late");
         }
     }

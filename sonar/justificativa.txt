@@ -1,0 +1,2 @@
+1 - Replace this use of System.out or System.err by a logger.
+Just: Apenas para imprimir os resultados das questões na console 

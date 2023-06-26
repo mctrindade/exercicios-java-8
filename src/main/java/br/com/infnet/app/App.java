@@ -1,19 +1,30 @@
 package br.com.infnet.app;
 
-import br.com.infnet.domain.*;
-import br.com.infnet.exception.CustomerWithSignaturePaymentLateException;
-import br.com.infnet.service.PaymentService;
-import br.com.infnet.service.SignatureService;
+import static br.com.infnet.util.PrintConsole.print;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Month;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import br.com.infnet.domain.Customer;
+import br.com.infnet.domain.CustomerWithSignaturePaymentLateValidation;
+import br.com.infnet.domain.Payment;
+import br.com.infnet.domain.Product;
+import br.com.infnet.domain.Signature;
+import br.com.infnet.exception.CustomerWithSignaturePaymentLateException;
+import br.com.infnet.service.PaymentService;
+import br.com.infnet.service.SignatureService;
 
 
 public class App {
 
-    public static void main(String[] args) throws CustomerWithSignaturePaymentLateException {
+    private static final String PRICE_SIGNATURE = "99.98";
+	private static final String PRINT_LINE = "--------------------------------------------------------------------------------";
+
+	public static void main(String[] args) throws CustomerWithSignaturePaymentLateException {
 
         //1 Crie uma Classe com um método main para criar alguns produtos, clientes e pagamentos.
         //  Crie Pagamentos com:  a data de hoje, ontem e um do mês passado.
@@ -50,18 +61,18 @@ public class App {
 
         PaymentService.printOrderedPayments(payments);
 
-        System.out.println("--------------------------------------------------------------------------------");
+        print(PRINT_LINE);
         //3 - Calcule e Imprima a soma dos valores de um pagamento com optional e recebendo um Double diretamente.
 
         PaymentService.printsSumPayments(payments);
 
-        System.out.println("--------------------------------------------------------------------------------");
+        print(PRINT_LINE);
 
         // 4- Calcule o Valor de todos os pagamentos da Lista de pagamentos.
 
        PaymentService.printSumOfAllPayments(payments);
 
-        System.out.println("--------------------------------------------------------------------------------");
+        print(PRINT_LINE);
 
         // 5- Imprima a quantidade de cada Produto vendido.
 
@@ -69,44 +80,45 @@ public class App {
 
         PaymentService.printTheAmountOfEachProductSelled(payments, allProducts);
 
-        System.out.println("--------------------------------------------------------------------------------");
+        print(PRINT_LINE);
 
         // 6 Crie um Mapa de <Cliente, List<Produto> , onde Cliente pode ser o nome do cliente.
 
-        Map<Customer, List<Product>> costumerProductsMap = PaymentService.createMapCustomerProducts(payments);
+        PaymentService.createMapCustomerProducts(payments);
 
         // 7 - Qual cliente gastou mais?
 
-        System.out.println("Cliente que gastou mais " + PaymentService.getTheConsumerWhoSpentMoreMoney(payments).getName());
-        System.out.println("--------------------------------------------------------------------------------");
+        print("Cliente que gastou mais " + PaymentService.getTheConsumerWhoSpentMoreMoney(payments).getName());
+        print(PRINT_LINE);
 
         //8 - Quanto foi faturado em um determinado mês?
 
-        System.out.println("Valor faturado em Junho: " + PaymentService.HowMuchWasSelledByMonth(payments, Month.JUNE));
+        print("Valor faturado em Junho: " + PaymentService.howMuchWasSelledByMonth(payments, Month.JUNE));
 
-        System.out.println("--------------------------------------------------------------------------------");
+        print(PRINT_LINE);
 
         // 9 - Crie 3 assinaturas com assinaturas de 99.98 reais, sendo 2 deles com assinaturas encerradas.
 
-        Signature s1 = new Signature(new BigDecimal("99.98"), LocalDate.now().minusMonths(10), c1);
-        Signature s2 = new Signature(new BigDecimal("99.98"), LocalDate.now().minusMonths(6),LocalDate.now().minusMonths(1), c2);
-        Signature s3 = new Signature(new BigDecimal("99.98"),  LocalDate.now().minusMonths(2), LocalDate.now().minusMonths(1), c3);
+        Signature s1 = new Signature(new BigDecimal(PRICE_SIGNATURE), LocalDate.now().minusMonths(10), c1);
+        Signature s2 = new Signature(new BigDecimal(PRICE_SIGNATURE), LocalDate.now().minusMonths(6),LocalDate.now().minusMonths(1), c2);
+        Signature s3 = new Signature(new BigDecimal(PRICE_SIGNATURE),  LocalDate.now().minusMonths(2), LocalDate.now().minusMonths(1), c3);
 
         //10 - Imprima o tempo em meses de alguma assinatura ainda ativa.
 
-        System.out.println("Tempo em meses de assinatura ativa da assinatura s1: " +  SignatureService.timeInMonthsSignatureActive(s1));
+        print("Tempo em meses de assinatura ativa da assinatura s1: " +  SignatureService.timeInMonthsSignatureActive(s1));
 
-        System.out.println("--------------------------------------------------------------------------------");
+        print(PRINT_LINE);
 
         //11 - Imprima o tempo de meses entre o start e end de todas assinaturas. Não utilize IFs para assinaturas sem end Time.
 
         List<Signature> signatures = Arrays.asList(s1,s2,s3);
         SignatureService.printTheTimeInMonthsAllSignatures(signatures);
 
-        System.out.println("--------------------------------------------------------------------------------");
+        print(PRINT_LINE);
 
         //12 - Calcule o valor pago em cada assinatura até o momento.
         SignatureService.printTheValuePaidInEachSignature(signatures);
 
     }
+	
 }

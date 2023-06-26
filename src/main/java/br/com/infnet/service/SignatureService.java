@@ -1,16 +1,19 @@
 package br.com.infnet.service;
 
+import static br.com.infnet.util.PrintConsole.print;
 
-import br.com.infnet.domain.Customer;
-import br.com.infnet.domain.Signature;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.List;
 
-public class SignatureService {
+import br.com.infnet.domain.Signature;
 
+public class SignatureService {
+	
+	private SignatureService(){}
+	
     private static LocalDate hoje = LocalDate.now();
 
     public static int timeInMonthsSignatureActive(Signature signature){
@@ -20,11 +23,9 @@ public class SignatureService {
 
 
     public static void printTheTimeInMonthsAllSignatures(List<Signature> signatures){
-
-
         signatures.stream().forEach(s -> {
             Period periodo2 = Period.between(s.getBegin(), s.getEnd().orElse(hoje));
-            System.out.println("Tempo em meses de assinatura entre start e end da assinatura do  " + s.getCustomer().getName() + " : " + periodo2.getMonths());
+            print("Tempo em meses de assinatura entre start e end da assinatura do  " + s.getCustomer().getName() + " : " + periodo2.getMonths());
         });
 
     }
@@ -34,13 +35,8 @@ public class SignatureService {
         signatures.stream().forEach(s -> {
             Period period =  Period.between(s.getBegin(), s.getEnd().orElse(hoje));
             BigDecimal valuePaid = s.getMonthlyPayment().multiply(BigDecimal.valueOf(period.getMonths()));
-            System.out.println("Valor pago de assinatura do cliente " + s.getCustomer().getName() + " : "+valuePaid);
+            print("Valor pago de assinatura do cliente " + s.getCustomer().getName() + " : "+valuePaid);
         });
-
-    }
-
-    public static void checkIfCustomerSignatureIsLate(Customer customer){
-
 
     }
 

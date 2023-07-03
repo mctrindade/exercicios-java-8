@@ -2,21 +2,21 @@ package br.com.infnet.statepattern;
 
 import java.util.List;
 
-public class ArquivoDAO implements OperacaoArquivoDAO {
+public class OperacaoArquivoDAOImpl implements OperacaoArquivoDAO {
 
     @Override
-    public void salvarArquivoSemErro(DadosProcessamentoRetorno dadosProcessamentoRetorn) {
-        System.out.println("Salvando dados do arquivo sem Erro!");
+    public void salvarArquivoSemErro(DadosProcessamentoRetorno dadosProcessamentoRetorno) {
+        System.out.println("Salvando dados do arquivo "+dadosProcessamentoRetorno.getNomeArquivo()+" sem Erro!");
     }
 
     @Override
-    public void marcarArquivoComoRecusado(DadosProcessamentoRetorno dadosProcessamentoRetorn) {
-        System.out.println("Marcando arquivo como recusado!");
+    public void marcarArquivoComoRecusado(DadosProcessamentoRetorno dadosProcessamentoRetorno) {
+        System.out.println("Marcando arquivo "+dadosProcessamentoRetorno.getNomeArquivo()+" como recusado!");
     }
 
     @Override
     public void salvarLinhasComErro(DadosProcessamentoRetorno dadosProcessamentoRetorno) {
-        System.out.println("Salvando linhas do arquivo com erro!");
+        System.out.println("Salvando linhas do arquivo "+dadosProcessamentoRetorno.getNomeArquivo()+" com erro!");
     }
 
     @Override
